@@ -1,0 +1,33 @@
+<a href="/users/add">新增</a>
+<table border="1" width="300">
+    <tr>
+        <td>姓名</td>
+        <td>密码</td>
+        <td>操作</td>
+    </tr>
+    <% if(users.length){ %>
+        <% users.forEach(function(u){%>
+            <tr>
+                <td><%=u.name%></td>
+                <td><%=u.password%></td>
+                <td>
+                    <a href="/users/update/<%=u._id%>">修改</a>
+                    <a href="/users/delete/<%=u._id%>">删除</a>
+                </td>
+            </tr>
+        <% }) %>
+        <tr>
+            <td colspan="3">
+                <a href="/users/page/1">首页</a>
+                <a href="/users/page/<%-pageNum-1%>">上一页</a>
+                <%=pageNum%>/<%=pageCount%>
+                <a href="/users/page/<%-pageNum+1%>">下一页</a>
+                <a href="/users/page/<%-pageCount%>">尾页</a>
+            </td>
+        </tr>
+    <% }else{ %>
+        <tr>
+            <td colspan="3">暂无数据</td>
+        </tr>
+    <% } %>
+</table>

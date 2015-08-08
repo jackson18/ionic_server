@@ -1,0 +1,7 @@
+﻿<h1><%=title%></h1>
+<form action="/users/update" method="post" class="form-horizontal">
+    <input type="hidden" name="user[_id]" value="<%-user._id%>"/>
+    <input type="text" name="user[name]" value="<%-user.name%>"/><br/>
+    <input type="text" name="user[password]" value="<%-user.password%>"/><br/>
+    <button type="submit">提交</button>
+</form>
