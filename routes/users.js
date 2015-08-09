@@ -4,6 +4,8 @@ var url = require('url');
 var userDao = require('../dao/userDao');
 var conf = require('../util/conf');
 var userModel = require('../model/userModel');
+var redis = require('redis');
+
 
 router.get('/', function(req, res, next) {
   var pageNum = 1;
@@ -118,14 +120,34 @@ router.get('/delete/:id', function(req, res, next) {
  * 返回第1页的所有用户信息
  */
 router.get('/api', function(req, res, next) {
-    userDao.getUserByPageAndIdSort(conf.pageNum, conf.pageSize, conf.sort_desc, function(err, docs) {
-        if (err) {
-            console.log(err);
-        } else {
-			var params = url.parse(req.url, true).query;
-			var result1 = params.callback + '(' + JSON.stringify({result: docs}) + ')';
-			res.send(result1);
-        }
+    var key = 'user_api';//redis存储key
+    var client = redis.createClient(6379, "192.168.10.131");
+    client.on('connect', function() {
+        client.get(key, function (err, reply) {
+            //redis没有命中，查mongodb并存入redis
+            if (err || reply === null) {
+                userDao.getUserByPageAndIdSort(conf.pageNum, conf.pageSize, conf.sort_desc, function(err, docs) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        var obj = {data: docs};
+                        client.set(key, JSON.stringify(obj));
+                        client.expire(key, 60);//有效时间60秒
+
+                        var params = url.parse(req.url, true).query;
+                        var result1 = params.callback + '(' + JSON.stringify({result: docs}) + ')';
+                        res.send(result1);
+                    }
+                });
+            } else {
+                //redis命中
+                var jsonObj = JSON.parse(reply);
+                var params = url.parse(req.url, true).query;
+                var result1 = params.callback + '(' + JSON.stringify({result: jsonObj.data}) + ')';
+                res.send(result1);
+            }
+        });
+
     });
 });
 
@@ -163,6 +185,10 @@ router.get('/api/down/id/:id', function(req, res, next) {
     });
 });
 
+/**
+ * 对外接口
+ * 返回某一用户详情
+ */
 router.get('/api/id/:id', function(req, res, next) {
     userDao.getUserById(req.params.id, function(err, doc) {
         if (err) {
